@@ -1,8 +1,9 @@
-import Bot from "./bot";
+import Bot from './bot';
+
 const Tchat = class {
   constructor(bots) {
     this.el = document.querySelector('#app');
-    this.bots = bots;
+    this.bots = this.createBots(bots);
   }
 
   renderHeader() {
@@ -56,24 +57,29 @@ const Tchat = class {
           `;
   }
 
-  renderMessageReceived() {
+  renderMessageReceived(bot) {
+    const {
+      name,
+      avatar,
+      message
+    } = bot;
+    const date = new Date();
     return `
       <div class="row mt-3">
         <div class="col-6">
           <div class="card">
               <div class="card-header ">
               <img
-                  src="https://www.chesterfieldobserver.com/wp-content/uploads/images/2021-04-14/12p1.jpg"
+                  src="${avatar}"
                   alt="Kitty"
                   class="img-fluid rounded-circle border border-dark col-2 border-2"
                   />
-                  <span class="ms-3 h4"> Kitty Bot </span>
+                  <span class="ms-3 h4">${name}</span>
               </div>
               <div class="card-body">
-              <h5 class="card-title">15 Déc 14:20</h5>
+              <h5 class="card-title">${date.toLocaleString()}</h5>
               <p class="card-text">
-                  Response Dural lead-in to additional content. Dural
-                  lead-in to additional content.
+                  ${message}
               </p>
               </div>
           </div>
@@ -130,7 +136,8 @@ const Tchat = class {
       id,
       name,
       avatar,
-      countMessage
+      countMessage,
+      status
     } = data;
 
     return `
@@ -143,7 +150,8 @@ const Tchat = class {
         />
       </div>
       <div class="col-7 pt-4">
-          <span class="h5">${name}</span>
+          <h4 class="h5">${name}</h4>
+          <h6 class="text-success">${status}</h6>
       </div>
       <div class="col-2 pt-4">
         <span class="badge bg-primary rounded-pill">${countMessage}</span>
@@ -165,15 +173,44 @@ const Tchat = class {
 
     buttonEl.addEventListener('click', (e) => {
       e.preventDefault();
-
+      const { value } = inputEl;
+      messagesEl.innerHTML += this.renderMessageSended(value);
+      this.searchActionByBot(value);
       messagesEl.scrollTop = messagesEl.scrollHeight;
-      messagesEl.innerHTML += this.renderMessageSended(inputEl.value);
+      inputEl.value = '';
     });
   }
 
-  createBots(){
-    return this.bots.map((bot) => new Bot(bot));
+  createBots(bots) {
+    return bots.map((bot) => new Bot(bot));
   }
+
+  searchActionByBot(value) {
+    const messagesEl = document.querySelector('#messages');
+    const bots = [];
+    for (let i = 0; i < this.bots.length; i += 1) {
+      const bot = this.bots[i];
+      const message = bot.findActionByValue(value);
+      const { id, name, avatar } = bot.entity;
+      if (!message) {
+        return message;
+      }
+      bots.push({
+        id,
+        name,
+        avatar,
+        message
+      });
+    }
+    for (let j = 0; j < bots.length; j += 1) {
+      const item = bots[j];
+      if (item.message) {
+        messagesEl.innerHTML += this.renderMessageReceived(item);
+      }
+    }
+    return true;
+  }
+
   run() {
     this.el.innerHTML += this.renderHeader();
     this.el.innerHTML += this.renderContainer();
